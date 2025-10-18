@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Basic Timer</title>
+  <meta name="description" content="A minimal, production-ready countdown timer. No dependencies.">
+  <style>
+    :root{
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --accent: #22c55e;
+      --accent-strong: #16a34a;
+      --danger: #ef4444;
+      --border: #1f2937;
+      --focus: #38bdf8;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      background: radial-gradient(1000px 600px at 80% -20%, #1f2937, transparent 50%) no-repeat,
+                  radial-gradient(900px 500px at -10% 120%, #0b1324, transparent 50%) no-repeat,
+                  var(--bg);
+      color: var(--text);
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      line-height: 1.4;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+    }
+    .app {
+      width: 100%;
+      max-width: 560px;
+      background: rgba(17, 24, 39, 0.72);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.35);
+      overflow: clip;
+    }
+    header {
+      padding: 18px 20px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    header h1 {
+      font-size: 18px;
+      margin: 0;
+      letter-spacing: 0.2px;
+    }
+    header small {
+      color: var(--muted);
+      font-size: 12px;
+    }
+    main {
+      padding: 20px;
+      display: grid;
+      gap: 16px;
+    }
+    .display {
+      display: grid;
+      gap: 6px;
+      text-align: center;
+      padding: 16px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: linear-gradient(180deg, rgba(255,255,255,0.02), transparent 30%);
+    }
+    #time-display {
+      font-variant-numeric: tabular-nums;
+      font-size: clamp(40px, 10vw, 64px);
+      font-weight: 700;
+      letter-spacing: 2px;
+    }
+    .progress {
+      width: 100%;
+      height: 10px;
+      background: #0b1020;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      overflow: hidden;
+    }
+    .progress > span {
+      display: block;
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--accent), #34d399);
+      transition: width 0.2s linear;
+    }
+    .controls {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 10px;
+    }
+    .row {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    label {
+      font-size: 12px;
+      color: var(--muted);
+    }
+    .input-wrap {
+      display: grid;
+      grid-template-columns: 1fr auto auto;
+      gap: 8px;
+      align-items: center;
+    }
+    input[type="number"] {
+      width: 100%;
+      padding: 12px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: #0b1020;
+      color: var(--text);
+      font-size: 16px;
+      outline: none;
+      transition: border-color .15s;
+    }
+    input[type="number"]:focus {
+      border-color: var(--focus);
+      box-shadow: 0 0 0 3px rgba(56,189,248,0.15);
+    }
+    button {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: #101827;
+      color: var(--text);
+      padding: 12px 14px;
+      border-radius: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform .05s ease, background .15s ease, border-color .15s ease, opacity .15s ease;
+    }
+    button:hover { background: #0f1a2d; }
+    button:active { transform: translateY(1px); }
+    button:disabled {
+      opacity: .5;
+      cursor: not-allowed;
+    }
+    .primary {
+      background: linear-gradient(180deg, var(--accent), var(--accent-strong));
+      border-color: transparent;
+      color: #04240f;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.25);
+    }
+    .danger {
+      border-color: #3b0f14;
+      background: #1b0a0c;
+      color: #fecaca;
+    }
+    details.url-box {
+      border-top: 1px dashed var(--border);
+      padding: 14px 20px;
+      background: rgba(0,0,0,0.12);
+    }
+    .url-info {
+      display: grid;
+      gap: 6px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .url-info a {
+      color: #93c5fd;
+      text-decoration: underline;
+      word-break: break-all;
+    }
+    .iframe-wrap {
+      margin-top: 10px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      height: 300px;
+      background: #0b1020;
+    }
+    iframe {
+      width: 100%;
+      height: 100%;
+      border: 0;
+      display: block;
+      background: white;
+    }
+    footer {
+      padding: 12px 20px 18px;
+      color: var(--muted);
+      font-size: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+    .sr-only {
+      position: absolute !important;
+      height: 1px; width: 1px;
+      overflow: hidden;
+      clip: rect(1px, 1px, 1px, 1px);
+      white-space: nowrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="app" id="app">
+    <header>
+      <h1>Basic Timer <small>no dependencies</small></h1>
+      <small id="status" aria-live="polite"></small>
+    </header>
+
+    <main>
+      <section class="display" aria-live="polite" aria-atomic="true">
+        <div id="time-display" role="timer" aria-label="Time remaining">00:00</div>
+        <div class="progress" aria-hidden="true"><span id="progress-bar"></span></div>
+      </section>
+
+      <section class="row">
+        <label for="seconds-input">Duration (seconds)</label>
+        <div class="input-wrap">
+          <input id="seconds-input" type="number" min="0" step="1" value="60" inputmode="numeric" aria-describedby="hint">
+          <button id="quick-1m" type="button" title="Set to 1 minute">+1m</button>
+          <button id="quick-5m" type="button" title="Set to 5 minutes">+5m</button>
+        </div>
+        <div id="hint" class="sr-only">Enter the number of seconds to count down from.</div>
+      </section>
+
+      <section class="controls">
+        <button id="start-btn" class="primary" type="button">Start</button>
+        <button id="pause-btn" type="button" disabled>Pause</button>
+        <button id="reset-btn" class="danger" type="button" disabled>Reset</button>
+      </section>
+    </main>
+
+    <details class="url-box" id="url-details" hidden>
+      <summary>External link from ?url parameter</summary>
+      <div class="url-info">
+        <div>Detected URL:
+          <a id="url-link" href="#" target="_blank" rel="noopener noreferrer">open</a>
+        </div>
+        <button id="preview-btn" type="button">Preview safely</button>
+        <div class="iframe-wrap" id="iframe-wrap" hidden aria-live="polite"></div>
+        <small>Note: Preview is sandboxed; scripts are blocked to keep you safe.</small>
+      </div>
+    </details>
+
+    <footer>
+      <span>Tip: Spacebar toggles start/pause.</span>
+      <span id="footer-status"></span>
+    </footer>
+  </div>
+
+  <script>
+    (function(){
+      'use strict';
+
+      // Elements
+      const displayEl = document.getElementById('time-display');
+      const progressEl = document.getElementById('progress-bar');
+      const secondsInput = document.getElementById('seconds-input');
+      const startBtn = document.getElementById('start-btn');
+      const pauseBtn = document.getElementById('pause-btn');
+      const resetBtn = document.getElementById('reset-btn');
+      const quick1 = document.getElementById('quick-1m');
+      const quick5 = document.getElementById('quick-5m');
+      const statusEl = document.getElementById('status');
+      const footerStatus = document.getElementById('footer-status');
+
+      // Timer state
+      let initialMs = 60000;
+      let endAt = null;
+      let remainingMs = initialMs;
+      let running = false;
+      let rafId = null;
+      let intervalId = null;
+      let audioCtx = null;
+      let startedOnce = false;
+
+      function clamp(n, min, max){ return Math.min(Math.max(n, min), max); }
+
+      function msFromInput() {
+        const s = Number(secondsInput.value);
+        if (!Number.isFinite(s) || s < 0) return 0;
+        return Math.round(s) * 1000;
+      }
+
+      function format(ms) {
+        ms = Math.max(0, Math.floor(ms));
+        const totalSec = Math.round(ms / 1000);
+        const m = Math.floor(totalSec / 60);
+        const s = totalSec % 60;
+        return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+      }
+
+      function setTitle(ms) {
+        if (running) {
+          document.title = `${format(ms)} • Timer`;
+        } else {
+          document.title = 'Basic Timer';
+        }
+      }
+
+      function updateUI(ms, percent) {
+        displayEl.textContent = format(ms);
+        progressEl.style.width = `${clamp(percent, 0, 100)}%`;
+        setTitle(ms);
+      }
+
+      function tick() {
+        if (!running) return;
+        const now = Date.now();
+        let ms = Math.max(0, endAt - now);
+        remainingMs = ms;
+
+        const percent = initialMs > 0 ? ((initialMs - ms) / initialMs) * 100 : 100;
+        updateUI(ms, percent);
+
+        if (ms <= 0) {
+          finish();
+          return;
+        }
+      }
+
+      function start() {
+        initialMs = msFromInput();
+        if (initialMs <= 0) {
+          speak('Please enter a duration greater than zero.');
+          pulse(secondsInput);
+          return;
+        }
+        if (!running) {
+          const base = remainingMs && remainingMs > 0 && startedOnce ? remainingMs : initialMs;
+          endAt = Date.now() + base;
+          running = true;
+          startedOnce = true;
+          startBtn.disabled = true;
+          pauseBtn.disabled = false;
+          resetBtn.disabled = false;
+          secondsInput.disabled = true;
+          quick1.disabled = true;
+          quick5.disabled = true;
+
+          clearInterval(intervalId);
+          intervalId = setInterval(tick, 125);
+          cancelAnimationFrame(rafId);
+          rafId = requestAnimationFrame(tick);
+
+          statusEl.textContent = 'Running';
+          footerStatus.textContent = '';
+        }
+      }
+
+      function pause() {
+        if (!running) return;
+        running = false;
+        remainingMs = Math.max(0, endAt - Date.now());
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = false;
+
+        clearInterval(intervalId);
+        intervalId = null;
+        cancelAnimationFrame(rafId);
+        rafId = null;
+
+        statusEl.textContent = 'Paused';
+        footerStatus.textContent = 'Paused';
+        setTitle(remainingMs);
+      }
+
+      function reset() {
+        running = false;
+        clearInterval(intervalId); intervalId = null;
+        cancelAnimationFrame(rafId); rafId = null;
+
+        initialMs = msFromInput();
+        remainingMs = initialMs;
+        endAt = null;
+        updateUI(remainingMs, 0);
+
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = true;
+
+        secondsInput.disabled = false;
+        quick1.disabled = false;
+        quick5.disabled = false;
+
+        statusEl.textContent = 'Ready';
+        footerStatus.textContent = '';
+      }
+
+      function finish() {
+        running = false;
+        clearInterval(intervalId); intervalId = null;
+        cancelAnimationFrame(rafId); rafId = null;
+
+        updateUI(0, 100);
+        startBtn.disabled = false;
+        pauseBtn.disabled = true;
+        resetBtn.disabled = false;
+
+        secondsInput.disabled = false;
+        quick1.disabled = false;
+        quick5.disabled = false;
+
+        statusEl.textContent = 'Done';
+        footerStatus.textContent = 'Time is up!';
+        setTitle(0);
+        notify();
+      }
+
+      function pulse(el) {
+        el.animate(
+          [{ boxShadow: '0 0 0 0 rgba(239,68,68,.6)' }, { boxShadow: '0 0 0 10px rgba(239,68,68,0)' }],
+          { duration: 600, easing: 'ease-out' }
+        );
+      }
+
+      function speak(text) {
+        try {
+          if ('speechSynthesis' in window) {
+            const utter = new SpeechSynthesisUtterance(text);
+            utter.rate = 1.05;
+            speechSynthesis.cancel();
+            speechSynthesis.speak(utter);
+          }
+        } catch (_) {}
+      }
+
+      function ensureAudioContext() {
+        if (!audioCtx) {
+          try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }
+          catch(_) { audioCtx = null; }
+        }
+        if (audioCtx && audioCtx.state === 'suspended') {
+          audioCtx.resume().catch(()=>{});
+        }
+        return audioCtx;
+      }
+
+      function beep(duration=700, frequency=880) {
+        const ctx = ensureAudioContext();
+        if (!ctx) return;
+
+        const oscillator = ctx.createOscillator();
+        const gain = ctx.createGain();
+
+        oscillator.type = 'sine';
+        oscillator.frequency.value = frequency;
+
+        gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.3, ctx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration/1000);
+
+        oscillator.connect(gain);
+        gain.connect(ctx.destination);
+
+        oscillator.start();
+        oscillator.stop(ctx.currentTime + duration/1000 + 0.02);
+      }
+
+      function notify() {
+        // Haptic and audio feedback
+        if (navigator.vibrate) {
+          navigator.vibrate([200, 100, 200]);
+        }
+        beep(650, 880);
+        speak('Timer finished');
+      }
+
+      // Button bindings
+      startBtn.addEventListener('click', start);
+      pauseBtn.addEventListener('click', pause);
+      resetBtn.addEventListener('click', reset);
+
+      quick1.addEventListener('click', () => {
+        secondsInput.value = String(Number(secondsInput.value || 0) + 60);
+        if (!running) reset();
+      });
+      quick5.addEventListener('click', () => {
+        secondsInput.value = String(Number(secondsInput.value || 0) + 5*60);
+        if (!running) reset();
+      });
+
+      // Spacebar toggles
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && !e.repeat) {
+          e.preventDefault();
+          if (running) pause(); else start();
+        }
+      });
+
+      // Keep display and state consistent on visibility changes
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && running) {
+          tick();
+        }
+      });
+
+      // Initialize
+      function init() {
+        secondsInput.value = '60';
+        initialMs = msFromInput();
+        remainingMs = initialMs;
+        updateUI(remainingMs, 0);
+        statusEl.textContent = 'Ready';
+      }
+      init();
+
+      // Safe handling for ?url=...
+      (function handleUrlParam(){
+        const params = new URLSearchParams(window.location.search);
+        const raw = params.get('url');
+        if (!raw) return;
+
+        let parsed;
+        try {
+          parsed = new URL(raw, window.location.href);
+        } catch (_) {
+          console.warn('Invalid ?url value');
+          return;
+        }
+        if (!/^https?:$/.test(parsed.protocol)) {
+          console.warn('Blocked non-http(s) protocol for ?url');
+          return;
+        }
+
+        const details = document.getElementById('url-details');
+        const link = document.getElementById('url-link');
+        const previewBtn = document.getElementById('preview-btn');
+        const wrap = document.getElementById('iframe-wrap');
+
+        link.href = parsed.href;
+        link.textContent = parsed.href;
+        details.hidden = false;
+
+        let loaded = false;
+        previewBtn.addEventListener('click', () => {
+          if (loaded) {
+            wrap.hidden = !wrap.hidden;
+            previewBtn.textContent = wrap.hidden ? 'Preview safely' : 'Hide preview';
+            return;
+          }
+          const iframe = document.createElement('iframe');
+          // Sandbox without scripts for safety; allow forms and popups to render basic pages
+          iframe.setAttribute('sandbox', 'allow-forms allow-popups allow-popups-to-escape-sandbox');
+          iframe.referrerPolicy = 'no-referrer';
+          iframe.src = parsed.href;
+          wrap.appendChild(iframe);
+          wrap.hidden = false;
+          previewBtn.textContent = 'Hide preview';
+          loaded = true;
+        });
+      })();
+    })();
+  </script>
+</body>
+</html>
